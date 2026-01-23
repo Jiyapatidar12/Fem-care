@@ -1,0 +1,3 @@
+Name: Omdeep
+GitHub: omicoded19
+About: 2nd year ECE student
