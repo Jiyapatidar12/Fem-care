@@ -6,6 +6,7 @@ import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import ProgressIndicator from "../ProgressIndicator";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../../context/AuthContext";
 
 interface LifestyleProps {
   data: OnboardingData;
@@ -19,8 +20,9 @@ export default function Lifestyle({
   onBack,
 }: LifestyleProps) {
   const [isValid, setIsValid] = useState(false);
-
-const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const { token } = useAuth();
 
   useEffect(() => {
     if (
@@ -35,6 +37,53 @@ const router = useRouter()
       setIsValid(false);
     }
   }, [data]);
+
+  const handleFinish = async () => {
+    if (!token) return;
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        age: data.age,
+        height: data.height,
+        weight: data.weight,
+        cycleRegularity: data.cycleRegularity,
+        cycleLength: data.cycleLength,
+        missedPeriods: data.missedPeriods,
+        heavyPeriods: data.heavyPeriods,
+        acneSeverity: data.acneSeverity,
+        excessHair: data.excessHair,
+        hairLoss: data.hairLoss,
+        suddenWeightGain: data.suddenWeightGain,
+        darkPatches: data.darkPatches,
+        familyHistory: data.familyHistory,
+        thyroidOrDiabetes: data.thyroidOrDiabetes,
+        activityLevel: data.activityLevel,
+        sleepHours: data.sleepHours,
+        stressLevel: data.stressLevel,
+      };
+
+      const res = await fetch("http://localhost:5000/onboarding", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        router.push("/user/dashboard");
+      } else {
+        alert(result.errors?.join(", ") || result.message || "Submission failed");
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#FFF9FB] flex items-center justify-center p-6">
@@ -150,10 +199,10 @@ const router = useRouter()
           </Button>
           <Button
             className="w-full bg-[#E76F8A] hover:bg-[#dd5f7c] text-white"
-            disabled={!isValid}
-            onClick={() => {router.push('./../user/dashboard')}}
+            disabled={!isValid || isSubmitting}
+            onClick={handleFinish}
           >
-            Finish →
+            {isSubmitting ? "Saving..." : "Finish →"}
           </Button>
         </div>
 

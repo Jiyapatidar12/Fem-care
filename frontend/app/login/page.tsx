@@ -16,12 +16,27 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login, isLoading: authLoading } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading, token } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && token) {
+      // Check onboarding status before redirecting
+      fetch("http://localhost:5000/onboarding", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((res) => {
+        if (res.ok) {
+          router.replace("/user/dashboard");
+        } else {
+          router.replace("/onboarding");
+        }
+      });
+    }
+  }, [isAuthenticated, authLoading, token, router]);
 
   const handleLogin = async () => {
     if (!isMounted) return;
@@ -39,7 +54,19 @@ export default function LoginPage() {
 
       if (response.ok) {
         login(data.token);
-        router.push("/onboarding");
+        
+        // Check if onboarding is completed
+        const onboardingRes = await fetch("http://localhost:5000/onboarding", {
+          headers: { Authorization: `Bearer ${data.token}` },
+        });
+
+        if (onboardingRes.ok) {
+          // Onboarding exists, go to dashboard
+          router.push("/user/dashboard");
+        } else {
+          // No onboarding data, go to onboarding
+          router.push("/onboarding");
+        }
       } else {
         alert(data.message || "Login failed");
       }

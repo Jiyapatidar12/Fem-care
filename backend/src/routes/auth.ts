@@ -70,10 +70,21 @@ router.post("/signin", async (req, res) => {
   }
 });
 
-export default router;
 router.get("/protected", authMiddleware, (req, res) => {
   res.json({
     message: "Protected route accessed successfully",
     userId: (req as any).userId,
   });
 });
+
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById((req as any).userId).select("email");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    return res.json({ email: user.email });
+  } catch {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+export default router;

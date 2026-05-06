@@ -18,12 +18,26 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login, isLoading: authLoading } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading, token } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && token) {
+      fetch("http://localhost:5000/onboarding", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((res) => {
+        if (res.ok) {
+          router.replace("/user/dashboard");
+        } else {
+          router.replace("/onboarding");
+        }
+      });
+    }
+  }, [isAuthenticated, authLoading, token, router]);
 
   const handleSignup = async () => {
     if (!isMounted) return;
@@ -63,6 +77,8 @@ export default function SignupPage() {
 
       if (loginResponse.ok) {
         login(loginData.token);
+        
+        // New user, always go to onboarding
         router.push("/onboarding");
       } else {
         // Signup successful but login failed - redirect to login page

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pickle
+import joblib
 import numpy as np
 import os
 
@@ -25,7 +26,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-model = pickle.load(open("models/pcos_risk_model.pkl", "rb"))
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ml-service"))
+
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "ml-service", "models", "pcos_risk_model.pkl")
+model = joblib.load(MODEL_PATH)
 
 class PCOSInput(BaseModel):
     age: int

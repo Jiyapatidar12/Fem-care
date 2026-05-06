@@ -53,6 +53,36 @@ export const createOnboarding = async (req: Request, res: Response) => {
   }
 };
 
+export const updateOnboarding = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const payload = req.body as OnboardingPayload;
+
+    const validationErrors = validateOnboardingPayload(payload);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: validationErrors,
+      });
+    }
+
+    const bmi = calculateBmi(payload.height, payload.weight);
+
+    const onboarding = await Onboarding.findOneAndUpdate(
+      { user: userId },
+      { ...payload, bmi },
+      { new: true, upsert: true }
+    );
+
+    return res.json({
+      message: "Onboarding updated",
+      data: onboarding,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const getOnboarding = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
